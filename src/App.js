@@ -1,13 +1,56 @@
 import React from 'react';
 import Axios from 'axios';
 
-const Cases = ({title, cases, addClass}) => {
+const Cases = ({cases, addClass, children}) => {
   return (
     <div className={"col text-center my-2 mx-4 rounded p-2 " + addClass}>
-      <h4 className="font-weight-bold">{title} Cases</h4>
+      <h4 className="font-weight-bold">{children} Cases</h4>
       <p>{cases}</p>
     </div>
   );
+}
+
+const ConfirmedCases = ({cases}) => {
+  return <Cases cases={cases} addClass="bg-warning">Confirmed</Cases>;
+}
+
+const RecoveredCases = ({cases}) => {
+  return <Cases cases={cases} addClass="bg-success text-white">Recovered</Cases>;
+}
+
+const DeathCases = ({cases}) => {
+  return <Cases cases={cases} addClass="bg-danger text-white">Death</Cases>;
+}
+
+const AllCases = ({confirmed, recovered, deaths, country}) => {
+  return (
+    <div className="card mx-3 mx-lg-5">
+      <h3 className="card-header">{country}</h3>
+      <div className="row card-body">
+        <ConfirmedCases cases={confirmed.toLocaleString('en-US')} />
+        <RecoveredCases cases={recovered.toLocaleString('en-US')} />
+        <DeathCases cases={deaths.toLocaleString('en-US')} />
+      </div>
+    </div>
+  );
+}
+
+const SearchedCountry = ({country}) => {
+  return <p>{country}</p>;
+}
+
+const SelectCountry = ({onChange, countries, value}) => {
+  return (
+    <div className="row my-3 mx-lg-3">
+      <div className="col card card-body text-center mx-4">
+        <h2 className="mb-3">Search country</h2>
+        <select className="custom-select" value={value} onChange={onChange} multiple={true}>
+          <option>Worldwide</option>
+          {countries}
+        </select>
+      </div>
+    </div>
+  )
 }
 
 export default class App extends React.Component {
@@ -17,10 +60,8 @@ export default class App extends React.Component {
     this.getCountryData = this.getCountryData.bind(this);
 
     this.state = {
-      confirmed: 0,
-      recovered: 0,
-      deaths: 0,
-      countries: []
+      countries: [],
+      selectedCountries: [],
     }
   }
 
@@ -38,57 +79,66 @@ export default class App extends React.Component {
 
   async worldWideData () {
     const {data} = await Axios.get('https://covid19.mathdro.id/api');
-
-    this.setState({
+    const cases = {
       confirmed: data.confirmed.value,
       recovered: data.recovered.value,
       deaths: data.deaths.value
-    });
+    };
+
+    return cases;
   }
 
-  async getCountryData (event) {
-    if (event.target.value === 'Worldwide') {
+  async getCountryData (country) {
+    if (country === 'Worldwide') {
       this.worldWideData();
       return;
     }
-
-    const responseAPI = await Axios.get(`https://covid19.mathdro.id/api/countries/${event.target.value}`);
-    this.setState({
+    const responseAPI = await Axios.get(`https://covid19.mathdro.id/api/countries/${country}`);
+    const cases = {
       confirmed: responseAPI.data.confirmed.value,
       recovered: responseAPI.data.recovered.value,
-      deaths: responseAPI.data.deaths.value
-    });
+      deaths: responseAPI.data.deaths.value,
+      country: country
+    };
+
+    return cases;
   }
 
   renderCountryOptions () {
     return this.state.countries.map((country, index) => <option key={index}>{country.name}</option>);
   }
 
+  selectCountry = event => {
+    const country = event.target.value;
+    let selectedCountries = this.state.selectedCountries;
+    if (!selectedCountries.includes(country)) {
+      selectedCountries.push(event.target.value)
+      this.setState({
+        selectedCountries: selectedCountries
+      });
+      return;
+    }
+
+    let countryIndex = selectedCountries.indexOf(country);
+    selectedCountries.splice(countryIndex, 1);
+    this.setState({
+      selectedCountries: selectedCountries
+    });
+  }
+
   render () {
-    const { confirmed, recovered, deaths } = this.state
+    const {selectedCountries} = this.state;
     return (
       <section className="container">
         <div className="row my-2">
           <h1 className="col text-center display-4">COVID-19 UPDATE</h1>
         </div>
-        
-        <div className="row my-3 mx-lg-3">
-          <div className="col card card-body text-center mx-4">
-            <h2 className="mb-3">Select country</h2>
-            <select className="custom-select" onChange={this.getCountryData}>
-              <option>Worldwide</option>
-              {this.renderCountryOptions()}
-            </select>
-          </div>
-        </div>
-
-        <div className="card card-body mx-3 mx-lg-5">
-          <div className="row">
-            <Cases title="Confirmed" cases={confirmed.toLocaleString('en-US')} addClass="bg-warning" />
-            <Cases title="Recovered" cases={recovered.toLocaleString('en-US')} addClass="bg-success text-white" />
-            <Cases title="Death" cases={deaths.toLocaleString('en-US')} addClass="bg-danger text-white" />
-          </div>
-        </div>
+        <SelectCountry value={selectedCountries} countries={this.renderCountryOptions()} onChange={this.selectCountry} />
+        {selectedCountries.map(async (country) => {
+          const countryCases = await this.getCountryData(country);
+          return <AllCases {...countryCases} />;
+          })
+        }
       </section>
     );
   }
