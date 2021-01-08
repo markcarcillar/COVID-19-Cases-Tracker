@@ -1,5 +1,29 @@
 import React from 'react';
 import Axios from 'axios';
+import Select from 'react-select';
+
+const MainTitle = () => {
+  return (
+    <div className="container">
+      <div className="row my-2">
+        <h1 className="col text-center display-4">COVID-19 UPDATE</h1>
+      </div>
+    </div>
+  );
+}
+
+const SearchField = ({onChange, options, value}) => {
+  return (
+    <div className="container">
+      <div className="row my-3 mx-lg-3">
+        <div className="col card card-body text-center mx-4">
+          <h2 className="mb-3">Search country</h2>
+          <Select isMulti={true} value={value} options={options} onChange={onChange} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const Cases = ({cases, addClass, children}) => {
   return (
@@ -35,35 +59,11 @@ const AllCases = ({confirmed, recovered, deaths, country}) => {
   );
 }
 
-const SearchedCountry = ({country}) => {
-  return <p>{country}</p>;
-}
-
-const SelectCountry = ({onChange, countries, value}) => {
-  return (
-    <div className="row my-3 mx-lg-3">
-      <div className="col card card-body text-center mx-4">
-        <h2 className="mb-3">Search country</h2>
-        <select className="custom-select" value={value} onChange={onChange} multiple={true}>
-          <option>Worldwide</option>
-          {countries}
-        </select>
-      </div>
-    </div>
-  )
-}
-
 export default class App extends React.Component {
-  constructor (props) {
-    super(props);
-
-    this.getCountryData = this.getCountryData.bind(this);
-
-    this.state = {
-      countries: [],
-      selectedCountries: [],
-    }
-  }
+  state = {
+    countries: [],
+    selectedCountries: [{value: 'Worldwide', label: 'Worldwide'}]
+  };
 
   componentDidMount () {
     this.getData();
@@ -71,9 +71,9 @@ export default class App extends React.Component {
 
   async getData () {
     const responseCountries = await Axios.get('https://covid19.mathdro.id/api/countries');
-    const countries = responseCountries.data.countries;
+    let countries = responseCountries.data.countries;
+    countries = countries.map(({name}) => ({value: name, label: name}));
 
-    this.worldWideData();
     this.setState({countries});
   }
 
@@ -82,7 +82,8 @@ export default class App extends React.Component {
     const cases = {
       confirmed: data.confirmed.value,
       recovered: data.recovered.value,
-      deaths: data.deaths.value
+      deaths: data.deaths.value,
+      country: 'Worldwide'
     };
 
     return cases;
@@ -90,8 +91,7 @@ export default class App extends React.Component {
 
   async getCountryData (country) {
     if (country === 'Worldwide') {
-      this.worldWideData();
-      return;
+      return await this.worldWideData();
     }
     const responseAPI = await Axios.get(`https://covid19.mathdro.id/api/countries/${country}`);
     const cases = {
@@ -104,41 +104,16 @@ export default class App extends React.Component {
     return cases;
   }
 
-  renderCountryOptions () {
-    return this.state.countries.map((country, index) => <option key={index}>{country.name}</option>);
-  }
-
-  selectCountry = event => {
-    const country = event.target.value;
-    let selectedCountries = this.state.selectedCountries;
-    if (!selectedCountries.includes(country)) {
-      selectedCountries.push(event.target.value)
-      this.setState({
-        selectedCountries: selectedCountries
-      });
-      return;
-    }
-
-    let countryIndex = selectedCountries.indexOf(country);
-    selectedCountries.splice(countryIndex, 1);
-    this.setState({
-      selectedCountries: selectedCountries
-    });
+  selectCountry = selectedCountries => {
+    this.setState({selectedCountries});
   }
 
   render () {
-    const {selectedCountries} = this.state;
+    const {selectedCountries, countries} = this.state;
     return (
-      <section className="container">
-        <div className="row my-2">
-          <h1 className="col text-center display-4">COVID-19 UPDATE</h1>
-        </div>
-        <SelectCountry value={selectedCountries} countries={this.renderCountryOptions()} onChange={this.selectCountry} />
-        {selectedCountries.map(async (country) => {
-          const countryCases = await this.getCountryData(country);
-          return <AllCases {...countryCases} />;
-          })
-        }
+      <section>
+        <MainTitle />
+        <SearchField value={selectedCountries} options={countries} onChange={this.selectCountry} />
       </section>
     );
   }

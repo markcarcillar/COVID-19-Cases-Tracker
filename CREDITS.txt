@@ -6,3 +6,6 @@ https://dev.to/yuribenjamin/how-to-deploy-react-app-in-github-pages-2a1f
 
 How to format a number in javascript
 https://stackoverflow.com/questions/5731193/how-to-format-numbers
+
+Select multiple in ReactJS
+https://www.freakyjolly.com/react-select-single-or-multiple-select-box-using-react-select-tutorial-with-examples/#Convert_App_Component_from_Function_to_Class
