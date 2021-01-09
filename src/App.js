@@ -1,94 +1,206 @@
 import React from 'react';
 import Axios from 'axios';
+import Select from 'react-select';
 
-const Cases = ({title, cases, addClass}) => {
+const MainTitle = () => {
   return (
-    <div className={"col text-center my-2 mx-4 rounded p-2 " + addClass}>
-      <h4 className="font-weight-bold">{title} Cases</h4>
+    <div className="container">
+      <div className="row my-2">
+        <h1 className="col text-center display-4">COVID-19 UPDATE</h1>
+      </div>
+    </div>
+  );
+}
+
+const SearchField = ({onChange, options, value}) => {
+  return (
+    <div className="container">
+      <div className="row my-3 mx-lg-3">
+        <div className="col card card-body text-center mx-4">
+          <h2 className="mb-3">Search country</h2>
+          <Select
+            isMulti={true} 
+            value={value}
+            options={options} 
+            onChange={onChange} 
+            placeholder="Search here..." 
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const Cases = ({cases, addClass, children}) => {
+  return (
+    <div className={"text-center my-2 rounded p-2 " + addClass}>
+      <h4 className="font-weight-bold">{children} Cases</h4>
       <p>{cases}</p>
     </div>
   );
 }
 
+const ConfirmedCases = ({cases}) => {
+  return <Cases cases={cases} addClass="bg-warning">Confirmed</Cases>;
+}
+
+const RecoveredCases = ({cases}) => {
+  return <Cases cases={cases} addClass="bg-success text-white">Recovered</Cases>;
+}
+
+const DeathCases = ({cases}) => {
+  return <Cases cases={cases} addClass="bg-danger text-white">Death</Cases>;
+}
+
+const AllCases = ({confirmed, recovered, deaths, country}) => {
+  return (
+    <div className="col-md-6 col-lg-4">
+      <div className="card mx-4 mx-md-0 my-3">
+        <h3 className="card-header">{country}</h3>
+        <div className="card-body">
+          <ConfirmedCases cases={confirmed} />
+          <RecoveredCases cases={recovered} />
+          <DeathCases cases={deaths} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const InfoBanner = () => {
+  return (
+    <div className="container text-white text-center lead ">
+      <div className="row mx-4 mx-lg-5">
+        <div className="col card bg-info p-2">
+          <p>No country is selected.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default class App extends React.Component {
-  constructor (props) {
-    super(props);
-
-    this.getCountryData = this.getCountryData.bind(this);
-
-    this.state = {
-      confirmed: 0,
-      recovered: 0,
-      deaths: 0,
-      countries: []
-    }
-  }
+  state = {
+    countries: [],
+    selectedCountries: [
+      {value: 'Worldwide', label: 'Worldwide'},
+      {value: 'Philippines', label: 'Philippines'},
+      {value: 'India', label: 'India'}
+    ],
+    allCases: []
+  };
 
   componentDidMount () {
-    this.getData();
+    this.setCountries();
+    this.getCountryData();
   }
 
-  async getData () {
-    const responseCountries = await Axios.get('https://covid19.mathdro.id/api/countries');
-    const countries = responseCountries.data.countries;
-
-    this.worldWideData();
+  async setCountries () {
+    const {data} = await Axios.get('https://covid19.mathdro.id/api/countries');
+    let countries = data.countries;
+    countries = countries.map(({name}) => ({value: name, label: name}));
+    countries.push({value: 'Worldwide', label: 'Worldwide'});
     this.setState({countries});
   }
 
   async worldWideData () {
     const {data} = await Axios.get('https://covid19.mathdro.id/api');
+    const cases = {
+      confirmed: data.confirmed.value.toLocaleString(),
+      recovered: data.recovered.value.toLocaleString(),
+      deaths: data.deaths.value.toLocaleString(),
+      country: 'Worldwide'
+    };
 
-    this.setState({
-      confirmed: data.confirmed.value,
-      recovered: data.recovered.value,
-      deaths: data.deaths.value
-    });
+    return cases;
   }
 
-  async getCountryData (event) {
-    if (event.target.value === 'Worldwide') {
-      this.worldWideData();
+  isCasesInAllCases (cases, useCountry=false, country='') {
+    const allCases = this.state.allCases;
+    for (let allCase of allCases) {
+      if (country === '' && !useCountry) {
+        if (allCase.country === cases.country) return true;
+        continue;
+      }
+      if (allCase.country === country) return true;
+    }
+    return false;
+  }
+
+  async getCountryData () {
+    const {selectedCountries, allCases} = this.state;
+    let newCases = [];
+    
+    await Promise.all(selectedCountries.map(async ({value}) => {
+      if (!this.isCasesInAllCases(null, true, value)) {
+        let cases;
+        if (value === 'Worldwide') {
+          cases = await this.worldWideData();
+          if (!this.isCasesInAllCases(cases)) newCases.push(cases);
+          return;
+        }
+        const {data} = await Axios.get(`https://covid19.mathdro.id/api/countries/${value}`);
+        cases = {
+          confirmed: data.confirmed.value.toLocaleString(),
+          recovered: data.recovered.value.toLocaleString(),
+          deaths: data.deaths.value.toLocaleString(),
+          country: value
+        };
+        if (!this.isCasesInAllCases(cases)) newCases.push(cases);
+      }
+    }));
+
+    this.setState({allCases: allCases.concat(newCases)});
+    this.unrenderCountryData();
+  }
+
+  unrenderCountryData () {
+    const {selectedCountries, allCases} = this.state;
+    if (allCases.length > 0) {
+      let newCases = allCases.filter(cases => {
+        for (let selectedCountry of selectedCountries) {
+          if (selectedCountry.value === cases.country) return true;
+        }
+        return false;
+      });
+  
+      this.setState({allCases: newCases});
+    }
+  }
+
+  selectCountry = selectedCountries => {
+    if (selectedCountries === null) {
+      this.setState(
+        {
+          selectedCountries: []
+        },
+        this.getCountryData // callback
+      );
       return;
     }
 
-    const responseAPI = await Axios.get(`https://covid19.mathdro.id/api/countries/${event.target.value}`);
-    this.setState({
-      confirmed: responseAPI.data.confirmed.value,
-      recovered: responseAPI.data.recovered.value,
-      deaths: responseAPI.data.deaths.value
-    });
-  }
-
-  renderCountryOptions () {
-    return this.state.countries.map((country, index) => <option key={index}>{country.name}</option>);
+    this.setState(
+      {selectedCountries},
+      this.getCountryData
+    );
   }
 
   render () {
-    const { confirmed, recovered, deaths } = this.state
+    const {selectedCountries, countries, allCases} = this.state;
     return (
-      <section className="container">
-        <div className="row my-2">
-          <h1 className="col text-center display-4">COVID-19 UPDATE</h1>
-        </div>
+      <section>
+        <MainTitle />
+        <SearchField value={selectedCountries} options={countries} onChange={this.selectCountry} />
+        {
+          allCases.length > 0 &&
+          <article className="container">
+            <div className="row">
+              {allCases.map(cases => <AllCases key={cases.country} {...cases} />)}
+            </div>
+          </article>
+        }
         
-        <div className="row my-3 mx-lg-3">
-          <div className="col card card-body text-center mx-4">
-            <h2 className="mb-3">Select country</h2>
-            <select className="custom-select" onChange={this.getCountryData}>
-              <option>Worldwide</option>
-              {this.renderCountryOptions()}
-            </select>
-          </div>
-        </div>
-
-        <div className="card card-body mx-3 mx-lg-5">
-          <div className="row">
-            <Cases title="Confirmed" cases={confirmed.toLocaleString('en-US')} addClass="bg-warning" />
-            <Cases title="Recovered" cases={recovered.toLocaleString('en-US')} addClass="bg-success text-white" />
-            <Cases title="Death" cases={deaths.toLocaleString('en-US')} addClass="bg-danger text-white" />
-          </div>
-        </div>
+        {selectedCountries.length === 0 && <InfoBanner />}
       </section>
     );
   }

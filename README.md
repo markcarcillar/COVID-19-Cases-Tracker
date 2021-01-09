@@ -9,6 +9,11 @@
 - A [ReactJS](https://github.com/facebook/create-react-app) project that uses [Axios](https://github.com/axios/axios) for performing HTTP requests and [Mathdroid COVID-19](https://github.com/mathdroid/covid-19-api) for API to track confirmed, recovered, and death cases of COVID-19 worldwide.
 - Selecting a country will only get the cases on that country.
 
+## Quick view
+![](img/pc-view.png)
+
+![](img/pc-view-select-country.png)
+
 ## Quick Start
 
 In the project directory, you can run:
