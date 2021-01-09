@@ -9,3 +9,24 @@ https://stackoverflow.com/questions/5731193/how-to-format-numbers
 
 Select multiple in ReactJS
 https://www.freakyjolly.com/react-select-single-or-multiple-select-box-using-react-select-tutorial-with-examples/#Convert_App_Component_from_Function_to_Class
+
+How to add item to a local state array in React
+https://medium.com/javascript-in-plain-english/how-to-add-to-an-array-in-react-state-3d08ddb2e1dc
+
+How to use async functions with Array.forEach in Javascript
+https://advancedweb.hu/how-to-use-async-functions-with-array-foreach-in-javascript/
+
+Why does react state is not updating immediately
+https://linguinecode.com/post/why-react-setstate-usestate-does-not-update-immediately
+
+Array filter method (JS)
+https://www.w3schools.com/jsref/jsref_filter.asp
+
+Web facivon.icon
+https://assets.publishing.service.gov.uk/government/uploads/system/uploads/image_data/file/97662/s960_covid-19.jpg
+
+Bootstrap Docs
+https://getbootstrap.com/docs/4.0/getting-started/introduction/
+
+ReactJS Docs
+https://reactjs.org/docs/hello-world.html
