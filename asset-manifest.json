@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.js": "/COVID-19-Cases-Tracker/static/js/main.d1b53faf.chunk.js",
-    "main.js.map": "/COVID-19-Cases-Tracker/static/js/main.d1b53faf.chunk.js.map",
+    "main.js": "/COVID-19-Cases-Tracker/static/js/main.f601be7f.chunk.js",
+    "main.js.map": "/COVID-19-Cases-Tracker/static/js/main.f601be7f.chunk.js.map",
     "runtime-main.js": "/COVID-19-Cases-Tracker/static/js/runtime-main.2ab7e64f.js",
     "runtime-main.js.map": "/COVID-19-Cases-Tracker/static/js/runtime-main.2ab7e64f.js.map",
-    "static/js/2.4195a117.chunk.js": "/COVID-19-Cases-Tracker/static/js/2.4195a117.chunk.js",
-    "static/js/2.4195a117.chunk.js.map": "/COVID-19-Cases-Tracker/static/js/2.4195a117.chunk.js.map",
+    "static/js/2.fabdcb35.chunk.js": "/COVID-19-Cases-Tracker/static/js/2.fabdcb35.chunk.js",
+    "static/js/2.fabdcb35.chunk.js.map": "/COVID-19-Cases-Tracker/static/js/2.fabdcb35.chunk.js.map",
     "index.html": "/COVID-19-Cases-Tracker/index.html",
-    "static/js/2.4195a117.chunk.js.LICENSE.txt": "/COVID-19-Cases-Tracker/static/js/2.4195a117.chunk.js.LICENSE.txt"
+    "static/js/2.fabdcb35.chunk.js.LICENSE.txt": "/COVID-19-Cases-Tracker/static/js/2.fabdcb35.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.2ab7e64f.js",
-    "static/js/2.4195a117.chunk.js",
-    "static/js/main.d1b53faf.chunk.js"
+    "static/js/2.fabdcb35.chunk.js",
+    "static/js/main.f601be7f.chunk.js"
   ]
 }
