@@ -18,7 +18,13 @@ const SearchField = ({onChange, options, value}) => {
       <div className="row my-3 mx-lg-3">
         <div className="col card card-body text-center mx-4">
           <h2 className="mb-3">Search country</h2>
-          <Select isMulti={true} value={value} options={options} onChange={onChange} />
+          <Select
+            isMulti={true} 
+            value={value}
+            options={options} 
+            onChange={onChange} 
+            placeholder="Search here..." 
+          />
         </div>
       </div>
     </div>
@@ -27,7 +33,7 @@ const SearchField = ({onChange, options, value}) => {
 
 const Cases = ({cases, addClass, children}) => {
   return (
-    <div className={"col text-center my-2 mx-4 rounded p-2 " + addClass}>
+    <div className={"text-center my-2 rounded p-2 " + addClass}>
       <h4 className="font-weight-bold">{children} Cases</h4>
       <p>{cases}</p>
     </div>
@@ -48,12 +54,26 @@ const DeathCases = ({cases}) => {
 
 const AllCases = ({confirmed, recovered, deaths, country}) => {
   return (
-    <div className="card mx-3 mx-lg-5">
-      <h3 className="card-header">{country}</h3>
-      <div className="row card-body">
-        <ConfirmedCases cases={confirmed.toLocaleString('en-US')} />
-        <RecoveredCases cases={recovered.toLocaleString('en-US')} />
-        <DeathCases cases={deaths.toLocaleString('en-US')} />
+    <div className="col-md-6 col-lg-4">
+      <div className="card mx-4 mx-md-0 my-3">
+        <h3 className="card-header">{country}</h3>
+        <div className="card-body">
+          <ConfirmedCases cases={confirmed} />
+          <RecoveredCases cases={recovered} />
+          <DeathCases cases={deaths} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const InfoBanner = () => {
+  return (
+    <div className="container text-white text-center lead ">
+      <div className="row mx-4 mx-lg-5">
+        <div className="col card bg-info p-2">
+          <p>No country is selected.</p>
+        </div>
       </div>
     </div>
   );
@@ -62,58 +82,125 @@ const AllCases = ({confirmed, recovered, deaths, country}) => {
 export default class App extends React.Component {
   state = {
     countries: [],
-    selectedCountries: [{value: 'Worldwide', label: 'Worldwide'}]
+    selectedCountries: [
+      {value: 'Worldwide', label: 'Worldwide'},
+      {value: 'Philippines', label: 'Philippines'},
+      {value: 'India', label: 'India'}
+    ],
+    allCases: []
   };
 
   componentDidMount () {
-    this.getData();
+    this.setCountries();
+    this.getCountryData();
   }
 
-  async getData () {
-    const responseCountries = await Axios.get('https://covid19.mathdro.id/api/countries');
-    let countries = responseCountries.data.countries;
+  async setCountries () {
+    const {data} = await Axios.get('https://covid19.mathdro.id/api/countries');
+    let countries = data.countries;
     countries = countries.map(({name}) => ({value: name, label: name}));
-
+    countries.push({value: 'Worldwide', label: 'Worldwide'});
     this.setState({countries});
   }
 
   async worldWideData () {
     const {data} = await Axios.get('https://covid19.mathdro.id/api');
     const cases = {
-      confirmed: data.confirmed.value,
-      recovered: data.recovered.value,
-      deaths: data.deaths.value,
+      confirmed: data.confirmed.value.toLocaleString(),
+      recovered: data.recovered.value.toLocaleString(),
+      deaths: data.deaths.value.toLocaleString(),
       country: 'Worldwide'
     };
 
     return cases;
   }
 
-  async getCountryData (country) {
-    if (country === 'Worldwide') {
-      return await this.worldWideData();
+  isCasesInAllCases (cases, useCountry=false, country='') {
+    const allCases = this.state.allCases;
+    for (let allCase of allCases) {
+      if (country === '' && !useCountry) {
+        if (allCase.country === cases.country) return true;
+        continue;
+      }
+      if (allCase.country === country) return true;
     }
-    const responseAPI = await Axios.get(`https://covid19.mathdro.id/api/countries/${country}`);
-    const cases = {
-      confirmed: responseAPI.data.confirmed.value,
-      recovered: responseAPI.data.recovered.value,
-      deaths: responseAPI.data.deaths.value,
-      country: country
-    };
+    return false;
+  }
 
-    return cases;
+  async getCountryData () {
+    const {selectedCountries, allCases} = this.state;
+    let newCases = [];
+    
+    await Promise.all(selectedCountries.map(async ({value}) => {
+      if (!this.isCasesInAllCases(null, true, value)) {
+        let cases;
+        if (value === 'Worldwide') {
+          cases = await this.worldWideData();
+          if (!this.isCasesInAllCases(cases)) newCases.push(cases);
+          return;
+        }
+        const {data} = await Axios.get(`https://covid19.mathdro.id/api/countries/${value}`);
+        cases = {
+          confirmed: data.confirmed.value.toLocaleString(),
+          recovered: data.recovered.value.toLocaleString(),
+          deaths: data.deaths.value.toLocaleString(),
+          country: value
+        };
+        if (!this.isCasesInAllCases(cases)) newCases.push(cases);
+      }
+    }));
+
+    this.setState({allCases: allCases.concat(newCases)});
+    this.unrenderCountryData();
+  }
+
+  unrenderCountryData () {
+    const {selectedCountries, allCases} = this.state;
+    if (allCases.length > 0) {
+      let newCases = allCases.filter(cases => {
+        for (let selectedCountry of selectedCountries) {
+          if (selectedCountry.value === cases.country) return true;
+        }
+        return false;
+      });
+  
+      this.setState({allCases: newCases});
+    }
   }
 
   selectCountry = selectedCountries => {
-    this.setState({selectedCountries});
+    if (selectedCountries === null) {
+      this.setState(
+        {
+          selectedCountries: []
+        },
+        this.getCountryData // callback
+      );
+      return;
+    }
+
+    this.setState(
+      {selectedCountries},
+      this.getCountryData
+    );
   }
 
   render () {
-    const {selectedCountries, countries} = this.state;
+    const {selectedCountries, countries, allCases} = this.state;
     return (
       <section>
         <MainTitle />
         <SearchField value={selectedCountries} options={countries} onChange={this.selectCountry} />
+        {
+          allCases.length > 0 &&
+          <article className="container">
+            <div className="row">
+              {allCases.map(cases => <AllCases key={cases.country} {...cases} />)}
+            </div>
+          </article>
+        }
+        
+        {selectedCountries.length === 0 && <InfoBanner />}
       </section>
     );
   }
